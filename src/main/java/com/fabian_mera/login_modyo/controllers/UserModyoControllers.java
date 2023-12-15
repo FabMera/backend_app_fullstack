@@ -3,7 +3,6 @@ package com.fabian_mera.login_modyo.controllers;
 import com.fabian_mera.login_modyo.models.entities.UserModyo;
 import com.fabian_mera.login_modyo.services.UserModyoService;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,7 +13,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/users")
-@CrossOrigin(originPatterns = "*")
 public class UserModyoControllers {
 
     private final UserModyoService userModyoService;
@@ -74,6 +72,18 @@ public class UserModyoControllers {
             return ResponseEntity.noContent().build();//204
         }
         return ResponseEntity.notFound().build();//404
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody UserModyo credentials) {
+        Optional<UserModyo> userOptional = userModyoService.findUserByEmail(credentials.getEmail());
+        if (userOptional.isPresent() && userOptional.get().getPassword().equals(credentials.getPassword())) {
+            // La autenticación fue exitosa, devuelve algún tipo de token o información de usuario
+            return ResponseEntity.ok(userOptional.get());
+        } else {
+            // La autenticación falló, devuelve un error
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario y/o contraseña inválida");
+        }
     }
 
 }

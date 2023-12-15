@@ -13,5 +13,5 @@ public interface UserModyoService {
     UserModyo saveUser(UserModyo user);
     Optional<UserModyo> updateUser(UserModyo user, UUID id);
     void removeUser(UUID id);
-
+    Optional<UserModyo> findUserByEmail(String email);
 }

@@ -69,4 +69,9 @@ public class UserServiceImpl implements UserModyoService {
     public void removeUser(UUID id) {
         userModyoRepository.deleteById(id);
     }
+
+    @Override
+    public Optional<UserModyo> findUserByEmail(String email) {
+        return userModyoRepository.findByEmail(email);
+    }
 }
