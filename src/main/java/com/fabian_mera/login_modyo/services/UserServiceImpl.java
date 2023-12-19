@@ -1,6 +1,11 @@
 package com.fabian_mera.login_modyo.services;
 
 import com.fabian_mera.login_modyo.Repositories.UserModyoRepository;
+import com.fabian_mera.login_modyo.dtos.RegisterDTO;
+import com.fabian_mera.login_modyo.dtos.UpdateUserDTO;
+import com.fabian_mera.login_modyo.dtos.CreateUserDTO;
+import com.fabian_mera.login_modyo.mapper.CreateUserConverter;
+import com.fabian_mera.login_modyo.mapper.RegisterUserConverter;
 import com.fabian_mera.login_modyo.models.entities.UserModyo;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
@@ -16,51 +21,59 @@ public class UserServiceImpl implements UserModyoService {
 
     //Crear constructor para inyectar el repositorio
     private final UserModyoRepository userModyoRepository;
+    private final CreateUserConverter createUserConverter;
 
-    public UserServiceImpl(UserModyoRepository userModyoRepository) {
+    private final RegisterUserConverter registerUserConverter;
+
+    public UserServiceImpl(UserModyoRepository userModyoRepository, CreateUserConverter createUserConverter, RegisterUserConverter registerUserConverter) {
         this.userModyoRepository = userModyoRepository;
+        this.createUserConverter = createUserConverter;
+        this.registerUserConverter = registerUserConverter;
+
+
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<UserModyo> findAllUsers() {
-        return userModyoRepository.findAll();
+    public List<CreateUserDTO> findAllUsers() {
+        List<UserModyo> users = userModyoRepository.findAll();
+        return users.stream().map(createUserConverter::convertToDto).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<UserModyo> findUserById(UUID id) {
-        return userModyoRepository.findById(id);
+    public Optional<CreateUserDTO> findUserById(UUID id) {
+        return userModyoRepository.findById(id).map(createUserConverter::convertToDto);
     }
 
     @Override
     @Transactional
-    public UserModyo saveUser(UserModyo user) {
-        return userModyoRepository.save(user);
+    public CreateUserDTO saveUser(RegisterDTO registerDTO) {
+        UserModyo userModyo = registerUserConverter.convertToEntity(registerDTO);
+        userModyo = userModyoRepository.save(userModyo);
+        return createUserConverter.convertToDto(userModyo);
     }
 
     @Override
     @Transactional
-    public Optional<UserModyo> updateUser(UserModyo user, UUID id) {
+    public Optional<CreateUserDTO> updateUser(UpdateUserDTO updateUserDTO, UUID id) {
         Optional<UserModyo> existingUserOptional = userModyoRepository.findById(id);
 
         if (existingUserOptional.isPresent()) {
             UserModyo existingUser = existingUserOptional.get();
 
             // Actualizar solo los campos no nulos
-            if (user.getUsername() != null) {
-                existingUser.setUsername(user.getUsername());
+            if (updateUserDTO.getUsername() != null) {
+                existingUser.setUsername(updateUserDTO.getUsername());
             }
-            if (user.getEmail() != null) {
-                existingUser.setEmail(user.getEmail());
-            }
-            if (user.getPassword() != null) {
-                existingUser.setPassword(user.getPassword());
+            if (updateUserDTO.getPassword() != null) {
+                existingUser.setPassword(updateUserDTO.getPassword());
             }
 
-            return Optional.of(userModyoRepository.save(existingUser));
+            // Guardar y retornar el usuario actualizado
+            UserModyo updateUser = userModyoRepository.save(existingUser);
+            return Optional.of(createUserConverter.convertToDto(updateUser));
         }
-
         return Optional.empty(); // El usuario no existe
     }
 
@@ -74,4 +87,5 @@ public class UserServiceImpl implements UserModyoService {
     public Optional<UserModyo> findUserByEmail(String email) {
         return userModyoRepository.findByEmail(email);
     }
+
 }

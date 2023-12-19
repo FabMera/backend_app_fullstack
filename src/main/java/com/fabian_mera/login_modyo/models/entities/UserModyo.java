@@ -19,4 +19,5 @@ public class UserModyo implements Serializable {
     //Si la tabla no existe y se crea de forma automatica, se debe usar la anotacion @Column para indicar que el campo es unico
     @Column(unique = true)
     private String email;
+    private String rol;
 }
