@@ -2,8 +2,8 @@ package com.fabian_mera.login_modyo.auth;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.fabian_mera.login_modyo.dtos.TokenEliminadoDTO;
 import com.fabian_mera.login_modyo.dtos.UserDTOAuth;
-import com.fabian_mera.login_modyo.models.entities.UserModyo;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -35,7 +35,7 @@ public class JWTAuthenticationProvider {
         String token = JWT.create()
                 .withClaim("username", userDTOAuth.getUsername())
                 .withClaim("email", userDTOAuth.getEmail())
-                .withClaim("rol", userDTOAuth.getRol())
+                .withClaim("rol", userDTOAuth.getRole())
                 .withIssuedAt(date)
                 .withExpiresAt(validDate)
                 .sign(algorithm);
@@ -51,7 +51,7 @@ public class JWTAuthenticationProvider {
             throw new BadCredentialsException("Token no válido");
         }
         HashSet<SimpleGrantedAuthority> rolesAuthorities = new HashSet<>();
-        rolesAuthorities.add(new SimpleGrantedAuthority("ROLE" + existingUserToken.getRol()));
+        rolesAuthorities.add(new SimpleGrantedAuthority("ROLE" + existingUserToken.getRole()));
         return new UsernamePasswordAuthenticationToken(existingUserToken, jwtoken, rolesAuthorities);
     }
 
@@ -61,6 +61,6 @@ public class JWTAuthenticationProvider {
             throw new BadCredentialsException("Token no válido");
         }
         listaTokens.remove(jwtoken);
-        return "Token eliminado";
+        return new TokenEliminadoDTO("Token eliminado correctamente").toString();
     }
 }

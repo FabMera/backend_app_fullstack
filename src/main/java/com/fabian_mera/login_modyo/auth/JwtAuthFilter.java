@@ -15,12 +15,12 @@ import java.util.Arrays;
 import java.util.List;
 
 @Component
-public class JWTAuthorizationFilter extends OncePerRequestFilter {
+public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JWTAuthenticationProvider jwtAuthenticationProvider;
-    private final List<String> urlsPermitidas = Arrays.asList("/login", "/register");
+    private final List<String> urlsPermitidas = Arrays.asList("/login", "/register","/users");
 
-    public JWTAuthorizationFilter(JWTAuthenticationProvider jwtAuthenticationProvider) {
+    public JwtAuthFilter(JWTAuthenticationProvider jwtAuthenticationProvider) {
         this.jwtAuthenticationProvider = jwtAuthenticationProvider;
     }
 

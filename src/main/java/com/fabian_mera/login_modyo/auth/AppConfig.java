@@ -19,7 +19,7 @@ public class AppConfig {
     }
 
     @Bean
-    JWTAuthorizationFilter jwtAuthFilter() {
-        return new JWTAuthorizationFilter(jwtAuthenticationProvider);
+    JwtAuthFilter jwtAuthFilter() {
+        return new JwtAuthFilter(jwtAuthenticationProvider);
     }
 }

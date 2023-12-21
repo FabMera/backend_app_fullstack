@@ -1,12 +1,15 @@
 package com.fabian_mera.login_modyo.services;
 
 import com.fabian_mera.login_modyo.Repositories.UserModyoRepository;
+import com.fabian_mera.login_modyo.auth.Roles;
 import com.fabian_mera.login_modyo.dtos.RegisterDTO;
 import com.fabian_mera.login_modyo.dtos.UpdateUserDTO;
 import com.fabian_mera.login_modyo.dtos.CreateUserDTO;
+import com.fabian_mera.login_modyo.exceptions.EmailAlReadyExceptions;
 import com.fabian_mera.login_modyo.mapper.CreateUserConverter;
 import com.fabian_mera.login_modyo.mapper.RegisterUserConverter;
 import com.fabian_mera.login_modyo.models.entities.UserModyo;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -24,13 +27,15 @@ public class UserServiceImpl implements UserModyoService {
     private final CreateUserConverter createUserConverter;
 
     private final RegisterUserConverter registerUserConverter;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserServiceImpl(UserModyoRepository userModyoRepository, CreateUserConverter createUserConverter, RegisterUserConverter registerUserConverter) {
+    public UserServiceImpl(UserModyoRepository userModyoRepository, CreateUserConverter createUserConverter, RegisterUserConverter registerUserConverter, PasswordEncoder passwordEncoder) {
         this.userModyoRepository = userModyoRepository;
         this.createUserConverter = createUserConverter;
         this.registerUserConverter = registerUserConverter;
 
 
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -49,9 +54,17 @@ public class UserServiceImpl implements UserModyoService {
     @Override
     @Transactional
     public CreateUserDTO saveUser(RegisterDTO registerDTO) {
-        UserModyo userModyo = registerUserConverter.convertToEntity(registerDTO);
-        userModyo = userModyoRepository.save(userModyo);
-        return createUserConverter.convertToDto(userModyo);
+        Optional<UserModyo> userModyo = userModyoRepository.findByEmail(registerDTO.getEmail());
+
+        if(userModyo.isPresent()){
+            throw new EmailAlReadyExceptions("El email ya existe");
+        }
+        String encodedPassword = passwordEncoder.encode(registerDTO.getPassword());
+        registerDTO.setPassword(encodedPassword);
+        registerDTO.setRole(Roles.USUARIO_DEV);
+        UserModyo userRegister = registerUserConverter.convertToEntity(registerDTO);
+        userModyoRepository.save(userRegister);
+        return createUserConverter.convertToDto(userRegister);
     }
 
     @Override

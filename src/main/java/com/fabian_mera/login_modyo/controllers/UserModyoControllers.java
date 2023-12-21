@@ -1,15 +1,17 @@
 package com.fabian_mera.login_modyo.controllers;
 
-import com.fabian_mera.login_modyo.dtos.LoginDTO;
-import com.fabian_mera.login_modyo.dtos.RegisterDTO;
-import com.fabian_mera.login_modyo.dtos.CreateUserDTO;
-import com.fabian_mera.login_modyo.dtos.UpdateUserDTO;
+import com.fabian_mera.login_modyo.AuthLogin.AuthHelpers;
+import com.fabian_mera.login_modyo.dtos.*;
+import com.fabian_mera.login_modyo.exceptions.EmailAlReadyExceptions;
+import com.fabian_mera.login_modyo.exceptions.PassIncorrectException;
+import com.fabian_mera.login_modyo.exceptions.UserNotExistException;
 import com.fabian_mera.login_modyo.mapper.CreateUserConverter;
-import com.fabian_mera.login_modyo.models.entities.UserModyo;
+import com.fabian_mera.login_modyo.mapper.LoginUserConverter;
 import com.fabian_mera.login_modyo.services.UserModyoService;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,14 +20,22 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/users")
+@CrossOrigin(originPatterns = "*")
 public class UserModyoControllers {
 
     private final UserModyoService userModyoService;
-    private final CreateUserConverter userLoginConverter;
+    private final CreateUserConverter createUserConverter;
+    private final LoginUserConverter userLoginConverter;
+    private final AuthHelpers authHelpers;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserModyoControllers(UserModyoService userModyoService, CreateUserConverter userLoginConverter) {
+    public UserModyoControllers(UserModyoService userModyoService, CreateUserConverter userLoginConverter, CreateUserConverter createUserConverter, LoginUserConverter userLoginConverter1, AuthHelpers authHelpers, PasswordEncoder passwordEncoder) {
         this.userModyoService = userModyoService;
-        this.userLoginConverter = userLoginConverter;
+        this.createUserConverter = createUserConverter;
+
+        this.userLoginConverter = userLoginConverter1;
+        this.authHelpers = authHelpers;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @GetMapping
@@ -46,16 +56,25 @@ public class UserModyoControllers {
     @PostMapping
     public ResponseEntity<?> saveUser(@RequestBody RegisterDTO registerDTO) {
         try {
-            CreateUserDTO savedUser = userModyoService.saveUser(registerDTO);
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
-        } catch (DataIntegrityViolationException e) {
-            // En caso de que se lance una excepción de clave duplicada (correo ya existente)
+            CreateUserDTO createUserDTO = userModyoService.saveUser(registerDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createUserDTO);//201
+        } catch (EmailAlReadyExceptions e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
 
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Correo electrónico ya existe");
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginDTO loginDTO) {
+        try {
+            JwtResponseDTO response = authHelpers.login(loginDTO);
+            return ResponseEntity.ok(response);
+        } catch (UserNotExistException ex) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
+        } catch (PassIncorrectException ex) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
 
-        } catch (Exception e) {
-            // Manejo general de excepciones
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error al procesar la solicitud");
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error en la autenticación");
         }
     }
 
@@ -81,7 +100,7 @@ public class UserModyoControllers {
         return ResponseEntity.notFound().build();//404
     }
 
-    @PostMapping("/login")
+    /*@PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginDTO loginDTO) {
         // Buscar usuario por correo electrónico EN LA BASE DE DATOS
 
@@ -93,6 +112,6 @@ public class UserModyoControllers {
             // La autenticación falló, devuelve un error
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario y/o contraseña inválida");
         }
-    }
+    }*/
 
 }
