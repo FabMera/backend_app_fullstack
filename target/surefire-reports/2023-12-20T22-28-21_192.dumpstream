@@ -1,0 +1,5 @@
+# Created at 2023-12-20T22:28:21.571
+Boot Manifest-JAR contains absolute paths in classpath 'E:\PROYECTOS\API_SPRINGBOOT_MODYO_VUEJS\Backend\login_modyo\target\test-classes'
+Hint: <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+'other' has different root
+
